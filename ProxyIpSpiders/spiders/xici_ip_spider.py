@@ -13,13 +13,15 @@ class XiciIpSpider(scrapy.Spider):
     def start_requests(self):
         reqs = []
 
-        for i in range(1, 8):
+        for i in range(1, 3):
             req = scrapy.Request('http://www.xicidaili.com/nn/%s' % i)
             reqs.append(req)
 
         return reqs
 
     def parse(self, response):
+        with open('test.html', 'wb') as f:
+            f.write(response.body)
         ip_list = response.xpath('//table[@id="ip_list"]')
         trs = ip_list[0].xpath('tr')
         items = []
@@ -36,7 +38,7 @@ class XiciIpSpider(scrapy.Spider):
             item['TTL'] = ip.xpath('td[9]/text()')[0].extract()
             item['TTL_MINUTES'] = format_TTL(item['TTL'])
             item['LAST_CHECK_TIME'] = '20' + ip.xpath('td[10]/text()')[0].extract()
-            if isToday(item['LAST_CHECK_TIME']):
+            if isToday(item['LAST_CHECK_TIME']) and item['TTL_MINUTES'] > 1:
                 items.append(item)
 
         return items

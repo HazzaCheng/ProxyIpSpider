@@ -4,9 +4,13 @@
 #
 # See documentation in:
 # https://doc.scrapy.org/en/latest/topics/spider-middleware.html
+import logging
+import random
 
 from scrapy import signals
 from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
+
+from ProxyIpSpiders.proxy import IpProvider
 
 
 class ProxyipspidersSpiderMiddleware(object):
@@ -97,8 +101,45 @@ class ProxyipspidersDownloaderMiddleware(object):
         spider.logger.info('Spider opened: %s' % spider.name)
 
 
-class FakeUserAgentMiddleware(UserAgentMiddleware):
+class RandomUserAgent(object):
+    """
+    Randomly rotate user agents based on a list of predefined ones.
+    """
+
+    def __init__(self, agents):
+        self.agents = agents
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        return cls(crawler.settings.getlist('USER_AGENTS'))
+
     def process_request(self, request, spider):
-        request.headers.setdefault(
-            'User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Safari/537.36'
-        )
+        request.headers.setdefault('User-Agent', random.choice(self.agents))
+
+
+class ProxyMiddleware(object):
+
+    def __init__(self):
+        self.http_i = 0
+        self.https_i = 0
+        self.ips = IpProvider().get_ips()
+        self.http_len = len(self.ips['http'])
+        self.https_len = len(self.ips['https'])
+
+    def process_request(self, request, spider):
+        if spider.name != 'xici_ip_spider':
+            if request.url.startswith("http://") and self.ips['http']:
+                i = self.http_i
+                ip = self.ips['http'][i]
+                request.meta['proxy'] = "http://%s:%d" % (ip[0], int(ip[1]))
+                logging.info('Use proxy ip No.%s - %s' % (i, str(ip)))
+                self.http_i = (i + 1) % self.http_len
+
+            if request.url.startswith("https://") and self.ips['https']:
+                i = self.https_i
+                ip = self.ips['https'][i]
+                request.meta['proxy'] = "https://%s:%d" % (ip[0], int(ip[1]))
+                logging.info('Use proxy ip No.%s - %s' % (i, str(ip)))
+                self.https_i = (i + 1) % self.https_len
+
+        return None
