@@ -8,7 +8,6 @@ import logging
 import random
 
 from scrapy import signals
-from scrapy.downloadermiddlewares.useragent import UserAgentMiddleware
 
 from ProxyIpSpiders.proxy import IpProvider
 
