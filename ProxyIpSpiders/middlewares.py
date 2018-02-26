@@ -141,4 +141,3 @@ class ProxyMiddleware(object):
                 logging.info('Use proxy ip No.%s - %s' % (i, str(ip)))
                 self.https_i = (i + 1) % self.https_len
 
-        return None
