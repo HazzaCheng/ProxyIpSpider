@@ -20,8 +20,6 @@ class XiciIpSpider(scrapy.Spider):
         return reqs
 
     def parse(self, response):
-        with open('test.html', 'wb') as f:
-            f.write(response.body)
         ip_list = response.xpath('//table[@id="ip_list"]')
         trs = ip_list[0].xpath('tr')
         items = []
